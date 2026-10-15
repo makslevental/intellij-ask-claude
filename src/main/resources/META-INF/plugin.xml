@@ -1,0 +1,27 @@
+<idea-plugin>
+  <id>dev.makslevental.claude-intellij-ask</id>
+  <name>Ask Claude</name>
+  <version>0.1.0</version>
+  <vendor email="maksim.levental@gmail.com">makslevental</vendor>
+  <description><![CDATA[
+    Select code, press the shortcut, type a question in a small popup, and send it to the Claude Code session
+    running in the IDE's Terminal tool window, together with a file and line-range reference
+    (<code>@src/Foo.kt#L10-20</code>). The message is submitted and the editor keeps focus.
+    Requires Claude Code to be installed and running in the Terminal tool window.
+  ]]></description>
+  <idea-version since-build="262"/>
+  <depends>com.intellij.modules.platform</depends>
+  <depends>org.jetbrains.plugins.terminal</depends>
+
+  <extensions defaultExtensionNs="com.intellij">
+    <notificationGroup id="Ask Claude" displayType="BALLOON"/>
+  </extensions>
+
+  <actions>
+    <action id="AskClaude.Ask" class="dev.makslevental.claudeask.AskClaudeAction" text="Ask Claude..."
+            description="Ask Claude Code about the selected lines and send it to the running session">
+      <keyboard-shortcut keymap="$default" first-keystroke="alt ctrl shift K"/>
+      <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+    </action>
+  </actions>
+</idea-plugin>
