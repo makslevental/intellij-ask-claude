@@ -1,0 +1,66 @@
+package dev.makslevental.claudeask;
+
+import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.wm.ToolWindow;
+import com.intellij.terminal.JBTerminalWidget;
+import com.intellij.terminal.ui.TerminalWidget;
+import com.intellij.ui.content.Content;
+import com.jediterm.terminal.ProcessTtyConnector;
+import com.jediterm.terminal.TtyConnector;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.plugins.terminal.ProxyTtyConnector;
+import org.jetbrains.plugins.terminal.TerminalToolWindowManager;
+
+import java.util.List;
+
+/** The classic (jediterm) terminal: tabs that have a {@link TerminalWidget}. Written to like a pty. */
+final class ClassicTerminals {
+    private static final Logger LOG = Logger.getInstance(ClassicTerminals.class);
+    /** Pause between the paste and Enter, so Claude Code has taken the whole paste before Enter arrives. */
+    private static final long ENTER_DELAY_MS = 150;
+
+    private ClassicTerminals() {}
+
+    @Nullable
+    static TerminalTarget find(Project project, ToolWindow toolWindow, List<Content> contents) {
+        for (Content content : contents) {
+            TerminalWidget widget = TerminalToolWindowManager.findWidgetByContent(content);
+            if (widget == null) continue; // a tab of the reworked terminal, handled elsewhere
+            TtyConnector connector = unwrap(widget);
+            if (!(connector instanceof ProcessTtyConnector process)) {
+                LOG.info("Ask Claude: classic tab '" + content.getTabName() + "' has no process connector");
+                continue;
+            }
+            Process shell = process.getProcess();
+            boolean claude = shell != null && shell.isAlive() && ClaudeProcesses.isClaudeRunning(shell.toHandle());
+            LOG.info("Ask Claude: classic tab '" + content.getTabName() + "' runs claude: " + claude);
+            if (claude) {
+                String title = content.getTabName();
+                return new TerminalTarget() {
+                    @Override
+                    public String title() {
+                        return title;
+                    }
+
+                    @Override
+                    public boolean send(String message) throws Exception {
+                        connector.write(PromptEncoder.paste(message, true));
+                        Thread.sleep(ENTER_DELAY_MS);
+                        connector.write(PromptEncoder.ENTER);
+                        return true;
+                    }
+                };
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    private static TtyConnector unwrap(TerminalWidget widget) {
+        JBTerminalWidget jediTerm = JBTerminalWidget.asJediTermWidget(widget);
+        TtyConnector connector = jediTerm != null ? jediTerm.getProcessTtyConnector() : widget.getTtyConnector();
+        if (connector instanceof ProxyTtyConnector proxy) connector = proxy.getConnector();
+        return connector;
+    }
+}

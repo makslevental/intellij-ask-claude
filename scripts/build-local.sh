@@ -7,7 +7,7 @@ cd "$(dirname "$0")/.."
 IDE_HOME="${IDE_HOME:-$HOME/Applications/CLion.app/Contents}"
 JAVAC="$IDE_HOME/jbr/Contents/Home/bin/javac"
 
-CP=$(ls "$IDE_HOME"/lib/*.jar "$IDE_HOME"/plugins/terminal/lib/*.jar | tr '\n' ':')
+CP=$(ls "$IDE_HOME"/lib/*.jar "$IDE_HOME"/plugins/terminal/lib/*.jar "$IDE_HOME"/plugins/terminal/lib/modules/*.jar | tr '\n' ':')
 rm -rf build/classes build/plugin build/ask-claude.zip
 mkdir -p build/classes build/plugin/ask-claude/lib
 

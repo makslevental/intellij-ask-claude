@@ -10,9 +10,12 @@
     Requires Claude Code to be installed and running in the Terminal tool window.
   ]]></description>
   <idea-version since-build="262"/>
-  <depends>com.intellij.modules.platform</depends>
-  <!-- Optional so that the plugin loads even if the Terminal plugin is disabled; sending then reports it. -->
-  <depends optional="true" config-file="ask-claude-terminal.xml">org.jetbrains.plugins.terminal</depends>
+  <!-- Same shape as the bundled plugins that use the terminal (e.g. mcpserver). -->
+  <dependencies>
+    <plugin id="com.intellij.modules.platform"/>
+    <plugin id="org.jetbrains.plugins.terminal"/>
+    <module name="intellij.terminal.frontend"/>
+  </dependencies>
 
   <extensions defaultExtensionNs="com.intellij">
     <notificationGroup id="Ask Claude" displayType="BALLOON"/>
