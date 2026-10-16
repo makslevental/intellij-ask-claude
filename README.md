@@ -4,17 +4,9 @@ An IntelliJ-platform plugin (built and compiled against CLion 2026.2). Select co
 question in a small popup, and it is sent to the Claude Code session running in the IDE's **Terminal** tool
 window, together with a file and line-range reference. The message is submitted; the editor keeps focus.
 
-```text
-select lines 10-20 of src/Foo.kt, press ⌃⌥⇧K, type "why does this loop twice?", Enter
-  →  Claude Code receives:
+<img width="1024" height="929" alt="image" src="https://github.com/user-attachments/assets/0732d1eb-add5-4f9a-b0b0-4d35ade0237a" />
 
-     @src/Foo.kt#L10-20 why does this loop twice?
 
-     Selected code:
-     ```kotlin
-     ...the 11 selected lines...
-     ```
-```
 
 ## Requirements
 
