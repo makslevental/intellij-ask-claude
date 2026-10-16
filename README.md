@@ -16,12 +16,6 @@ select lines 10-20 of src/Foo.kt, press ⌃⌥⇧K, type "why does this loop twi
      ```
 ```
 
-## Status
-
-Compiles against CLion 2026.2.3 and the pure logic has tests. In a first run in CLion, the plugin loaded and
-opened its popup; the reworked-terminal path was added after that run showed the tabs were not classic widgets,
-and has not yet been run end to end. See "If it does not work".
-
 ## Requirements
 
 * CLion (or another IDE) of build 262 or later, with its bundled **Terminal** plugin enabled.
@@ -34,8 +28,10 @@ and has not yet been run end to end. See "If it does not work".
    choose **Ask Claude...**.
 3. Optionally tick **Send text** (off by default; your choice is remembered), then type the question. The
    reference names the lines, and Claude Code reads only those lines from disk. For a selection of part of a line the
-   exact columns are added after it (see "How it works"). So the text is only needed for unsaved edits. **Enter** sends, **Shift+Enter** or **Option+Enter**
-   (Alt+Enter outside macOS) adds a new line, **Esc** cancels. A multi-line question is sent as one message.
+   exact columns are added after it, like `@src/Foo.kt#L11 (selected 11:3 to 11:6)` (1-based; the end is just after
+   the last selected character). So the text is only needed for unsaved edits. **Enter** sends, **Shift+Enter** or
+   **Option+Enter** (Alt+Enter outside macOS) adds a new line, **Esc** cancels. A multi-line question is sent as one
+   message.
 
 The popup takes keyboard focus while you type, and gives it back to the editor when it closes. The Terminal tool
 window is never activated.
@@ -54,30 +50,6 @@ Code (by checking each tab's shell and the processes below it), and:
 A tab whose process could not be read, and which was picked only because its title says "Claude", is labelled
 "(guessed from the title)". Only the IDE's own Terminal tool window is searched, so another project's window or an
 external terminal is never a target.
-
-## How it works
-
-* `SelectionPointer` builds the reference. It is always a valid line mention: `@path#L10-14` for a range,
-  `@path#L12` for a single line or a bare caret (a selection ending at column 0 does not include that last line).
-  When the selection covers only **part** of a line (code before where it starts or after where it ends;
-  whitespace doesn't count), the exact span follows as plain text:
-  `@path#L11 (selected 11:3 to 11:6) why is this null?`. Lines and columns are 1-based and the end is the position
-  just after the last selected character. The span is deliberately *not* part of the mention: I tested Claude Code
-  with a column form (`#L10C3-L10C9`) and it did not recognise it and attached the **whole file** (130 lines),
-  while `#L10-12` attached only those three lines. The path is relative to the project, absolute outside it.
-* `PromptEncoder` builds the message: the pointer and question on the first line, then, when **Send text** is ticked, the selected code in a
-  fenced block (a longer fence if the code contains backticks; selections over 20,000 characters are cut with a
-  note, since the pointer lets Claude read the rest). With nothing selected only the line pointer is sent.
-* `ClaudeTerminalLocator` walks the Terminal tool window's tabs and lists the tabs whose shell, or any process
-  below it, is Claude Code (`ClaudeProcessMatcher`); the user picks when there are several (`TargetChoice`). Both
-  kinds of terminal are supported:
-  * **reworked terminal** (the default in recent IDEs; `ReworkedTerminals`): the tab's shell process id comes
-    from its terminal session, and the text goes in through the IDE's own `TerminalSendTextBuilder` as a
-    bracketed paste followed by Enter;
-  * **classic terminal** (`ClassicTerminals`): the text is written to the terminal's process as a bracketed
-    paste, a 150 ms pause, then Enter.
-  If no process can be read for any tab, a single tab titled like "Claude" is offered, labelled as a guess.
-* Neither path activates the Terminal tool window, which is what keeps focus in the editor.
 
 ## Build and install
 
