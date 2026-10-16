@@ -90,6 +90,7 @@ The plugin logs what it inspects. In the IDE: Help → Show Log in Finder (`idea
 
 * Terminal tool window only; an external terminal cannot be reached.
 * Targets build 262 (CLion 2026.2) and declares a dependency on the terminal frontend module, which older IDEs
-  do not have. The terminal classes it uses are IDE-internal and may change between releases.
+  do not have. No internal API is used, but the reworked terminal's API (tabs, views, send-text) is
+  still marked experimental, so it may change between releases; the classic terminal's API is stable.
 * A path containing spaces is sent as-is; Claude Code's handling of that has not been checked.
 * If Claude is busy, the message is queued like anything you type.

@@ -8,7 +8,7 @@ import com.intellij.terminal.frontend.view.TerminalView;
 import com.intellij.ui.content.Content;
 import kotlinx.coroutines.Deferred;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.plugins.terminal.session.impl.TerminalSession;
+import org.jetbrains.plugins.terminal.session.TerminalStartupOptions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,53 +22,34 @@ final class ReworkedTerminals {
 
     private ReworkedTerminals() {}
 
-    /**
-     * Every reworked tab that runs Claude, in tab order. When no tab's process could be read, a single tab titled
-     * like "Claude" is returned instead, marked as unverified.
-     */
-    static List<TerminalTarget> findAll(Project project, @Nullable Content selected) {
-        List<TerminalToolWindowTab> tabs = new ArrayList<>(TerminalToolWindowTabsManager.getInstance(project).getTabs());
-        List<TerminalTarget> found = new ArrayList<>();
-        List<TerminalToolWindowTab> titled = new ArrayList<>();
-        boolean anyUnreadable = false;
-        for (TerminalToolWindowTab tab : tabs) {
-            String title = tab.getContent().getTabName();
-            long pid = processId(tab.getView());
-            boolean claude = pid > 0 && ClaudeProcesses.isClaudeRunning(pid);
-            LOG.info("Ask Claude: reworked tab '" + title + "' pid " + (pid > 0 ? pid : "unknown") + " runs claude: " + claude);
-            if (pid <= 0) anyUnreadable = true;
-            if (claude) {
-                found.add(target(tab, pid, true, tab.getContent() == selected));
-            } else if (pid <= 0 && title != null && title.toLowerCase().contains("claude")) {
-                titled.add(tab);
-            }
+    /** Every reworked tab, in tab order. */
+    static List<TerminalTab> tabs(Project project, @Nullable Content selected) {
+        List<TerminalTab> all = new ArrayList<>();
+        for (TerminalToolWindowTab tab : TerminalToolWindowTabsManager.getInstance(project).getTabs()) {
+            all.add(tab(tab, processId(tab.getView()), tab.getContent() == selected));
         }
-        // Process ids are not always readable. Only when none matched, and exactly one unreadable tab is titled like
-        // Claude, offer that one, labelled as a guess.
-        if (found.isEmpty() && anyUnreadable && titled.size() == 1) {
-            LOG.info("Ask Claude: no process matched; offering the one tab titled like Claude");
-            TerminalToolWindowTab tab = titled.get(0);
-            found.add(target(tab, System.identityHashCode(tab), false, tab.getContent() == selected));
-        }
-        return found;
+        return all;
     }
 
     /** The shell's process id, or -1 while the session has not started or cannot be read. */
     private static long processId(TerminalView view) {
         try {
-            Deferred<TerminalSession> session = view.getSessionDeferred();
-            if (!session.isCompleted()) return -1;
-            return session.getCompleted().getProcessId();
+            Deferred<TerminalStartupOptions> options = view.getStartupOptionsDeferred();
+            if (!options.isCompleted()) return -1;
+            Long pid = options.getCompleted().getPid(); // null when the shell is not a local process
+            return pid == null ? -1 : pid;
         } catch (RuntimeException | LinkageError e) {
-            LOG.info("Ask Claude: could not read a terminal session: " + e);
+            LOG.info("Ask Claude: could not read a terminal's startup options: " + e);
             return -1;
         }
     }
 
-    private static TerminalTarget target(TerminalToolWindowTab tab, long id, boolean verified, boolean isSelected) {
+    private static TerminalTab tab(TerminalToolWindowTab tab, long pid, boolean isSelected) {
         TerminalView view = tab.getView();
         String title = tab.getContent().getTabName();
-        return new TerminalTarget() {
+        // Without a process id, the IDE's tab object is the stable key.
+        long id = pid > 0 ? pid : System.identityHashCode(tab);
+        return new TerminalTab() {
             @Override
             public long id() {
                 return id;
@@ -90,8 +71,13 @@ final class ReworkedTerminals {
             }
 
             @Override
-            public boolean isVerified() {
-                return verified;
+            public long processId() {
+                return pid;
+            }
+
+            @Override
+            public boolean mayGuessFromTitle() {
+                return true;
             }
 
             @Override

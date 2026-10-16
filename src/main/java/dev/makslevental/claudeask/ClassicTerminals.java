@@ -1,8 +1,6 @@
 package dev.makslevental.claudeask;
 
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.terminal.JBTerminalWidget;
 import com.intellij.terminal.ui.TerminalWidget;
 import com.intellij.ui.content.Content;
@@ -23,9 +21,9 @@ final class ClassicTerminals {
 
     private ClassicTerminals() {}
 
-    /** Every classic tab that runs Claude, in tab order. */
-    static List<TerminalTarget> findAll(Project project, ToolWindow toolWindow, List<Content> contents, @Nullable Content selected) {
-        List<TerminalTarget> found = new ArrayList<>();
+    /** Every classic tab with a live shell, in tab order. */
+    static List<TerminalTab> tabs(List<Content> contents, @Nullable Content selected) {
+        List<TerminalTab> found = new ArrayList<>();
         for (Content content : contents) {
             TerminalWidget widget = TerminalToolWindowManager.findWidgetByContent(content);
             if (widget == null) continue; // a tab of the reworked terminal, handled elsewhere
@@ -35,13 +33,14 @@ final class ClassicTerminals {
                 continue;
             }
             Process shell = process.getProcess();
-            boolean claude = shell != null && shell.isAlive() && ClaudeProcesses.isClaudeRunning(shell.toHandle());
-            LOG.info("Ask Claude: classic tab '" + content.getTabName() + "' runs claude: " + claude);
-            if (!claude) continue;
+            if (shell == null || !shell.isAlive()) {
+                LOG.info("Ask Claude: classic tab '" + content.getTabName() + "' has no live shell");
+                continue;
+            }
             long id = shell.pid();
             String title = content.getTabName();
             boolean isSelected = content == selected;
-            found.add(new TerminalTarget() {
+            found.add(new TerminalTab() {
                 @Override
                 public long id() {
                     return id;
@@ -58,8 +57,13 @@ final class ClassicTerminals {
                 }
 
                 @Override
-                public boolean isVerified() {
-                    return true;
+                public long processId() {
+                    return id;
+                }
+
+                @Override
+                public boolean mayGuessFromTitle() {
+                    return false; // the process is always readable here
                 }
 
                 @Override

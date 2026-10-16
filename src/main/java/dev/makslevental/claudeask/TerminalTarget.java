@@ -2,33 +2,36 @@ package dev.makslevental.claudeask;
 
 import org.jetbrains.annotations.Nullable;
 
-/** A terminal tab in which Claude Code runs, and a way to send it a message. */
-public interface TerminalTarget {
-    /** A key for this tab that stays the same while the IDE runs (the shell's process id when known). */
-    long id();
+/**
+ * A terminal tab in which Claude Code runs.
+ *
+ * @param isVerified false when the tab was only guessed to run Claude from its title, because no process could be read
+ */
+public record TerminalTarget(TerminalTab tab, boolean isVerified) {
 
-    /** The tab's title. */
-    String title();
+    public long id() {
+        return tab.id();
+    }
 
-    /** The terminal's working directory, if known. */
+    public String title() {
+        return tab.title();
+    }
+
     @Nullable
-    String directory();
+    public String directory() {
+        return tab.directory();
+    }
 
-    /** False when the tab was only guessed to run Claude from its title, because no process could be read. */
-    boolean isVerified();
+    public boolean isSelected() {
+        return tab.isSelected();
+    }
 
-    /** Whether this is the tab currently selected in the Terminal tool window. */
-    boolean isSelected();
+    /** See {@link TerminalTab#send}. */
+    public boolean send(String message) throws Exception {
+        return tab.send(message);
+    }
 
-    /**
-     * Sends the message as one paste and submits it. Must not move focus.
-     *
-     * @return false if the terminal refused the text
-     * @throws Exception if writing failed
-     */
-    boolean send(String message) throws Exception;
-
-    default String label() {
-        return TargetChoice.label(title(), directory(), System.getProperty("user.home"), isVerified());
+    public String label() {
+        return TargetChoice.label(title(), directory(), System.getProperty("user.home"), isVerified);
     }
 }
