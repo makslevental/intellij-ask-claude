@@ -15,6 +15,11 @@ Compiles against CLion 2026.2.3 and the pure logic has tests. In a first run in 
 opened its popup; the reworked-terminal path was added after that run showed the tabs were not classic widgets,
 and has not yet been run end to end. See "If it does not work".
 
+## Requirements
+
+* CLion (or another IDE) of build 262 or later, with its bundled **Terminal** plugin enabled.
+* The Claude Code CLI, running in the IDE's Terminal tool window.
+
 ## Use
 
 1. Start `claude` in the IDE's Terminal tool window (any tab; the plugin finds it).
