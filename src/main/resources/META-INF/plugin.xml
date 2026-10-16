@@ -19,6 +19,9 @@
 
   <extensions defaultExtensionNs="com.intellij">
     <notificationGroup id="Ask Claude" displayType="BALLOON"/>
+    <applicationService serviceImplementation="dev.makslevental.claudeask.AskClaudeSettings"/>
+    <applicationConfigurable parentId="tools" id="dev.makslevental.claudeask.settings"
+                             instance="dev.makslevental.claudeask.AskClaudeConfigurable" displayName="Ask Claude"/>
   </extensions>
 
   <actions>

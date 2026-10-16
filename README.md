@@ -103,6 +103,19 @@ The plugin logs what it inspects. In the IDE: Help → Show Log in Finder (`idea
 * **Text appears but is not submitted**, or appears garbled: Claude Code may not be in bracketed-paste mode. For
   the classic terminal, `PromptEncoder.paste(message, false)` in `ClassicTerminals` sends plain typing instead.
 
+## Settings
+
+**Settings | Tools | Ask Claude** has one option, **Claude Code process name**: a regular expression
+(case-insensitive, default `claude`). A terminal tab counts as running Claude Code when one of its processes has an
+*executable file name* that contains a match. So `claude` matches `claude` and `claude-code-1.2.3.darwin-arm64`.
+
+* It is matched against the executable's **file name only**, not the whole command line or the arguments. That keeps
+  `vim claude.md`, or a tool run from a folder called `claude-something`, from being mistaken for Claude.
+* Always on, whatever you set: an executable named exactly `claude` / `claude.exe`, and installs run through an
+  interpreter (`node …/@scope/claude-code/cli.js`, or a script named `claude`).
+* Change it if you start Claude through a wrapper or under another name, for example `my-claude-wrapper`.
+  An invalid expression is refused when you apply the settings.
+
 ## Limitations
 
 * Terminal tool window only; an external terminal cannot be reached.

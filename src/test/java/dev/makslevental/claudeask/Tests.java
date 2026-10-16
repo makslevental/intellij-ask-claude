@@ -13,6 +13,16 @@ public final class Tests {
         }
     }
 
+    private static void throwsIllegal(String name, Runnable r) {
+        try {
+            r.run();
+            failures++;
+            System.out.println("(fail) " + name + ": no exception");
+        } catch (java.util.regex.PatternSyntaxException e) {
+            System.out.println("(pass) " + name);
+        }
+    }
+
     private static void throwsIae(String name, Runnable r) {
         try {
             r.run();
@@ -105,6 +115,29 @@ public final class Tests {
         String cut = PromptEncoder.message("@a.c#L1", "q", longCode, "c");
         eq("an overlong selection is cut with a note", true, cut.endsWith("\n```\n(\u2026 5 more characters not shown)"));
         eq("the cut selection keeps the maximum", true, cut.contains("x".repeat(PromptEncoder.MAX_SELECTED_CHARS) + "\n```"));
+
+
+        java.util.regex.Pattern custom = ClaudeProcessMatcher.compile("my-wrapper|cc-cli");
+        eq("a custom pattern matches the executable name", true, ClaudeProcessMatcher.isClaude("/opt/bin/my-wrapper", null, custom));
+        eq("a custom pattern is not applied to arguments", false,
+                ClaudeProcessMatcher.isClaude("/usr/bin/vim", new String[] {"/x/cc-cli/index.js"}, custom));
+        eq("a custom pattern replaces the default substring", false, ClaudeProcessMatcher.isClaude("/opt/claude-code-1.0", null, custom));
+        eq("an executable named claude always matches", true, ClaudeProcessMatcher.isClaude("/usr/local/bin/claude", null, custom));
+        eq("patterns are case-insensitive", true, ClaudeProcessMatcher.isClaude("/opt/CLAUDE-CODE-1", null));
+        eq("a blank pattern falls back to the default", ClaudeProcessMatcher.DEFAULT_PATTERN, ClaudeProcessMatcher.compile("  ").pattern());
+        eq("an invalid pattern falls back to the default", ClaudeProcessMatcher.DEFAULT_PATTERN, ClaudeProcessMatcher.compile("(").pattern());
+        throwsIllegal("the strict compiler rejects an invalid pattern", () -> ClaudeProcessMatcher.compileStrict("("));
+
+
+        eq("the default pattern is claude", "claude", ClaudeProcessMatcher.DEFAULT_PATTERN);
+        eq("an executable with claude in its name matches", true, ClaudeProcessMatcher.isClaude("/opt/foo/claude-wrapper", null));
+        eq("claude as a directory name is not enough", false, ClaudeProcessMatcher.isClaude("/Users/me/claude-project/bin/tsc", null));
+        eq("running a project called claude-x is not claude", false,
+                ClaudeProcessMatcher.isClaude("/usr/bin/node", new String[] {"/Users/me/claude-project/build.js"}));
+        eq("a claude-code directory holding the script is claude", true,
+                ClaudeProcessMatcher.isClaude("/usr/bin/node", new String[] {"/lib/node_modules/@scope/claude-code/cli.js"}));
+        eq("a file called claude-code is not a claude-code directory", false,
+                ClaudeProcessMatcher.isClaude("/usr/bin/less", new String[] {"/home/me/claude-code"}));
 
         System.out.println(failures == 0 ? "\nall passed" : "\n" + failures + " FAILED");
         System.exit(failures == 0 ? 0 : 1);
