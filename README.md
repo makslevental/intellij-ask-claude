@@ -57,6 +57,11 @@ external terminal is never a target.
 
 ## Build and install
 
+Every push to `main` is built by GitHub Actions and published as the
+[latest release](https://github.com/makslevental/intellij-ask-claude/releases/tag/latest):
+download [`ask-claude.zip`](https://github.com/makslevental/intellij-ask-claude/releases/download/latest/ask-claude.zip)
+and install it as below. To build it yourself:
+
 ```sh
 scripts/test.sh          # plain-Java tests for the pure classes (needs a JDK 21+)
 scripts/build-local.sh   # compiles against an installed IDE's jars (no network) -> build/ask-claude.zip
