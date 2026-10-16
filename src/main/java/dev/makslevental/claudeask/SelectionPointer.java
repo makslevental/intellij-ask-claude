@@ -22,6 +22,20 @@ public final class SelectionPointer {
     }
 
     /**
+     * A reference with columns in GitHub's line-and-column fragment form: {@code @src/Foo.kt#L11C3-L11C6}.
+     * Lines and columns are 1-based; the end is the position just after the last selected character.
+     * Claude Code's documented {@code @file#L} mention takes whole lines only ({@code #L10}, {@code #L10-20}), so how
+     * it treats this form is untested.
+     */
+    public static String buildWithColumns(String path, int startLine, int startColumn, int endLine, int endColumn) {
+        if (path == null || path.isBlank()) throw new IllegalArgumentException("path is empty");
+        if (startLine < 1 || startColumn < 1 || endLine < 1 || endColumn < 1) {
+            throw new IllegalArgumentException("lines and columns are 1-based");
+        }
+        return "@" + path.replace('\\', '/') + "#L" + startLine + "C" + startColumn + "-L" + endLine + "C" + endColumn;
+    }
+
+    /**
      * The last line a selection really covers. A selection that ends at column 0 of a line (the usual
      * result of selecting whole lines) does not include that line.
      *

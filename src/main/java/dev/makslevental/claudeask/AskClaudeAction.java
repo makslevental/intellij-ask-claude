@@ -78,8 +78,11 @@ public final class AskClaudeAction extends AnAction implements DumbAware {
         int startLine0 = document.getLineNumber(start);
         int endLine0 = document.getLineNumber(end);
         int endColumn = end - document.getLineStartOffset(endLine0);
-        int lastLine = SelectionPointer.lastLine(startLine0, endLine0, endColumn, hasSelection);
         String path = SelectionPointer.displayPath(file.getPath(), project.getBasePath());
-        return SelectionPointer.build(path, startLine0 + 1, lastLine);
+        if (hasSelection) {
+            int startColumn = start - document.getLineStartOffset(startLine0);
+            return SelectionPointer.buildWithColumns(path, startLine0 + 1, startColumn + 1, endLine0 + 1, endColumn + 1);
+        }
+        return SelectionPointer.build(path, startLine0 + 1, startLine0 + 1);
     }
 }

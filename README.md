@@ -33,9 +33,9 @@ and has not yet been run end to end. See "If it does not work".
 2. Select code in an editor (or just put the caret on a line) and press **Ctrl+Alt+Shift+K**, or right-click and
    choose **Ask Claude...**.
 3. Optionally tick **Send text** (off by default; your choice is remembered), then type the question. The
-   `@file#L10-20` reference already makes Claude Code read those lines from disk, so the text is only needed for
-   unsaved edits or a selection that is part of a line (the reference cannot carry columns). **Enter** sends, **Shift+Enter** or **Option+Enter** (Alt+Enter outside macOS) adds a new line,
-   **Esc** cancels. A multi-line question is sent as one message.
+   reference names the lines (and, for a selection, the columns: see below), and Claude Code reads the file from
+   disk, so the text is only needed for unsaved edits. **Enter** sends, **Shift+Enter** or **Option+Enter**
+   (Alt+Enter outside macOS) adds a new line, **Esc** cancels. A multi-line question is sent as one message.
 
 The popup takes keyboard focus while you type, and gives it back to the editor when it closes. The Terminal tool
 window is never activated.
@@ -57,8 +57,12 @@ external terminal is never a target.
 
 ## How it works
 
-* `SelectionPointer` builds `@path#L10-20` (relative to the project, absolute outside it; a selection ending at
-  column 0 does not include that last line).
+* `SelectionPointer` builds the reference. With a selection it is `@path#L11C3-L11C6` (GitHub's line-and-column
+  form; lines and columns are 1-based and the end is the position just after the last selected character, so a
+  whole-line selection ends at column 1 of the next line). With only a caret it is `@path#L12`. The path is
+  relative to the project, absolute outside it. **Experimental:** Claude Code's documented `@file#L` mention takes
+  whole lines only (`#L10`, `#L10-20`), so how it treats the column form is untested. If the file stops being
+  attached, tick **Send text** to include the code, or switch `AskClaudeAction` back to `SelectionPointer.build`.
 * `PromptEncoder` builds the message: the pointer and question on the first line, then, when **Send text** is ticked, the selected code in a
   fenced block (a longer fence if the code contains backticks; selections over 20,000 characters are cut with a
   note, since the pointer lets Claude read the rest). With nothing selected only the line pointer is sent.

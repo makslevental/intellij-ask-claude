@@ -41,6 +41,15 @@ public final class Tests {
         throwsIae("empty path rejected", () -> SelectionPointer.build(" ", 1, 1));
         throwsIae("line 0 rejected", () -> SelectionPointer.build("a", 0, 1));
 
+        eq("column pointer within one line", "@src/Foo.kt#L11C3-L11C6", SelectionPointer.buildWithColumns("src/Foo.kt", 11, 3, 11, 6));
+        eq("column pointer over several lines", "@src/Foo.kt#L10C5-L14C12", SelectionPointer.buildWithColumns("src/Foo.kt", 10, 5, 14, 12));
+        eq("a whole-line selection ends at column 1 of the next line", "@a.c#L10C1-L15C1", SelectionPointer.buildWithColumns("a.c", 10, 1, 15, 1));
+        eq("column pointer: backslashes become slashes", "@src/Foo.kt#L1C1-L1C2", SelectionPointer.buildWithColumns("src\\Foo.kt", 1, 1, 1, 2));
+        throwsIae("column pointer: empty path rejected", () -> SelectionPointer.buildWithColumns("", 1, 1, 1, 2));
+        throwsIae("column pointer: column 0 rejected", () -> SelectionPointer.buildWithColumns("a", 1, 0, 1, 2));
+        eq("the column pointer carries into the message", "@a.c#L11C3-L11C6 why?",
+                PromptEncoder.message(SelectionPointer.buildWithColumns("a.c", 11, 3, 11, 6), "why?"));
+
         eq("caret only: that line", 4, SelectionPointer.lastLine(3, 3, 7, false));
         eq("mid-line selection ends on its line", 6, SelectionPointer.lastLine(3, 5, 9, true));
         eq("whole-line selection ends before the next line", 5, SelectionPointer.lastLine(3, 5, 0, true));
