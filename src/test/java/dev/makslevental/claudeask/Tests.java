@@ -66,8 +66,6 @@ public final class Tests {
                 ClaudeProcessMatcher.isClaude("/opt/example/claude-code/1.2.3/claude-code-1.2.3.darwin-arm64", null));
         eq("vendor-prefixed versioned binary", true,
                 ClaudeProcessMatcher.isClaude("/opt/example/acme-claude-code-1.2.3.darwin-arm64", null));
-        eq("node running claude-code", true,
-                ClaudeProcessMatcher.isClaude("/usr/bin/node", new String[] {"/usr/lib/node_modules/@anthropic-ai/claude-code/cli.js"}));
         eq("node running a script called claude", true,
                 ClaudeProcessMatcher.isClaude("/usr/bin/node", new String[] {"/x/bin/claude"}));
         eq("a shell is not claude", false, ClaudeProcessMatcher.isClaude("/bin/zsh", new String[] {"-l"}));
@@ -134,10 +132,6 @@ public final class Tests {
         eq("claude as a directory name is not enough", false, ClaudeProcessMatcher.isClaude("/Users/me/claude-project/bin/tsc", null));
         eq("running a project called claude-x is not claude", false,
                 ClaudeProcessMatcher.isClaude("/usr/bin/node", new String[] {"/Users/me/claude-project/build.js"}));
-        eq("a claude-code directory holding the script is claude", true,
-                ClaudeProcessMatcher.isClaude("/usr/bin/node", new String[] {"/lib/node_modules/@scope/claude-code/cli.js"}));
-        eq("a file called claude-code is not a claude-code directory", false,
-                ClaudeProcessMatcher.isClaude("/usr/bin/less", new String[] {"/home/me/claude-code"}));
 
         System.out.println(failures == 0 ? "\nall passed" : "\n" + failures + " FAILED");
         System.exit(failures == 0 ? 0 : 1);

@@ -28,7 +28,7 @@ public final class AskClaudeConfigurable implements Configurable {
         JBLabel help = new JBLabel("<html>A terminal tab counts as running Claude Code when it has a process whose executable "
                 + "file name contains a match for this regular expression (case-insensitive). So <code>claude</code> matches "
                 + "<code>claude</code> and <code>claude-code-1.2.3</code>. Change it if you start Claude through a wrapper "
-                + "or under another name. Installs run through <code>node</code> are recognised separately. "
+                + "or under another name. A script install, <code>node /usr/local/bin/claude</code>, is recognised too. "
                 + "Default: <code>" + ClaudeProcessMatcher.DEFAULT_PATTERN + "</code></html>");
         help.setForeground(UIUtil.getContextHelpForeground());
 

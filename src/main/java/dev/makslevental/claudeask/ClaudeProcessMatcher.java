@@ -7,14 +7,12 @@ import java.util.regex.PatternSyntaxException;
 /**
  * Decides whether a process is the Claude Code CLI. Pure, so it can be tested without the IDE.
  *
- * <p>Claude Code is started in several ways: a binary named {@code claude}, a versioned binary such as
- * {@code claude-code-1.2.3.darwin-arm64} (possibly with a vendor prefix), or {@code node .../claude-code/cli.js}.
- * A process matches when
+ * <p>The CLI is called {@code claude}. A process matches when
  * <ul>
- *   <li>its executable's file name contains the configurable pattern (default {@link #DEFAULT_PATTERN}); or</li>
- *   <li>its executable is named exactly {@code claude} / {@code claude.exe}; or</li>
- *   <li>one of its first two arguments (where an interpreter such as {@code node} is given its script) is a file
- *       named exactly {@code claude}, or lies in a directory named exactly {@code claude-code}.</li>
+ *   <li>its executable's file name contains the configurable pattern (default {@link #DEFAULT_PATTERN}); this also
+ *       covers an executable that is a symlink target with a longer name, such as {@code claude-1.2.3}; or</li>
+ *   <li>one of its first two arguments is a file named exactly {@code claude} (or {@code claude.exe}): that is how
+ *       a script install looks, {@code node /usr/local/bin/claude}.</li>
  * </ul>
  * The pattern is deliberately not applied to arguments: with a short pattern like {@code claude} that would also
  * match {@code vim claude.md} or anything run from a project folder called {@code claude-something}.
@@ -61,18 +59,7 @@ public final class ClaudeProcessMatcher {
         if (isClaudeName(name) || pattern.matcher(name).find()) return true;
         if (args == null) return false;
         for (int i = 0; i < Math.min(2, args.length); i++) {
-            String arg = args[i];
-            if (arg == null) continue;
-            if (isClaudeName(baseName(arg)) || hasDirectory(arg, "claude-code")) return true;
-        }
-        return false;
-    }
-
-    /** True when {@code path} has a directory named exactly {@code name} (not the file itself). */
-    private static boolean hasDirectory(String path, String name) {
-        String[] parts = path.replace('\\', '/').split("/");
-        for (int i = 0; i < parts.length - 1; i++) {
-            if (parts[i].equalsIgnoreCase(name)) return true;
+            if (args[i] != null && isClaudeName(baseName(args[i]))) return true;
         }
         return false;
     }
