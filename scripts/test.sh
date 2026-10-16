@@ -16,5 +16,6 @@ rm -rf "$OUT"; mkdir -p "$OUT"
   src/main/java/dev/makslevental/claudeask/PromptEncoder.java \
   src/main/java/dev/makslevental/claudeask/ClaudeProcessMatcher.java \
   src/main/java/dev/makslevental/claudeask/TargetChoice.java \
+  src/main/java/dev/makslevental/claudeask/ClaudeExecutable.java \
   src/test/java/dev/makslevental/claudeask/Tests.java
 "$JAVA" -cp "$OUT" dev.makslevental.claudeask.Tests

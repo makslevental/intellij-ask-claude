@@ -7,7 +7,7 @@
     Select code, press the shortcut, type a question in a small popup, and send it to the Claude Code session
     running in the IDE's Terminal tool window, together with a file and line-range reference
     (<code>@src/Foo.kt#L10-20</code>). The message is submitted and the editor keeps focus.
-    Requires Claude Code to be installed and running in the Terminal tool window.
+    Requires Claude Code to be installed; if no session is running, one is started in a new Terminal tab.
   ]]></description>
   <idea-version since-build="262"/>
   <!-- Same shape as the bundled plugins that use the terminal (e.g. mcpserver). -->

@@ -17,6 +17,8 @@ public final class AskClaudeSettings implements PersistentStateComponent<AskClau
     public static final class State {
         /** Regular expression for the Claude Code process name. */
         public String processPattern = ClaudeProcessMatcher.DEFAULT_PATTERN;
+        /** The Claude Code executable to start when no session is running; blank to find it automatically. */
+        public String claudeExecutable = "";
     }
 
     private State state = new State();
@@ -44,6 +46,14 @@ public final class AskClaudeSettings implements PersistentStateComponent<AskClau
 
     public void setProcessPatternText(String text) {
         state.processPattern = text == null || text.isBlank() ? ClaudeProcessMatcher.DEFAULT_PATTERN : text.strip();
+    }
+
+    public String claudeExecutableText() {
+        return state.claudeExecutable == null ? "" : state.claudeExecutable.strip();
+    }
+
+    public void setClaudeExecutableText(String text) {
+        state.claudeExecutable = text == null ? "" : text.strip();
     }
 
     /** The compiled pattern; an invalid saved value falls back to the default instead of failing. */

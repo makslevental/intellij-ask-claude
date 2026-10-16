@@ -146,7 +146,52 @@ public final class Tests {
         eq("running a project called claude-x is not claude", false,
                 ClaudeProcessMatcher.isClaude("/usr/bin/node", new String[] {"/Users/me/claude-project/build.js"}));
 
+        try {
+            executableTests();
+        } catch (java.io.IOException e) {
+            failures++;
+            System.out.println("(fail) executable tests could not set up files: " + e);
+        }
+
         System.out.println(failures == 0 ? "\nall passed" : "\n" + failures + " FAILED");
         System.exit(failures == 0 ? 0 : 1);
+    }
+
+    private static void executableTests() throws java.io.IOException {
+        java.nio.file.Path root = java.nio.file.Files.createTempDirectory("ask-claude-test");
+        java.nio.file.Path first = java.nio.file.Files.createDirectories(root.resolve("first"));
+        java.nio.file.Path second = java.nio.file.Files.createDirectories(root.resolve("second"));
+        java.nio.file.Path fallback = java.nio.file.Files.createDirectories(root.resolve("fallback"));
+        java.nio.file.Path empty = java.nio.file.Files.createDirectories(root.resolve("empty"));
+        String inSecond = executable(second.resolve("claude"));
+        String inFallback = executable(fallback.resolve("claude"));
+        java.nio.file.Files.writeString(first.resolve("claude"), "not executable");
+        String custom = executable(root.resolve("my-claude"));
+        java.util.List<String> fallbacks = java.util.List.of(fallback.toString());
+        java.util.List<String> none = java.util.List.of();
+
+        eq("found on the PATH", inSecond, ClaudeExecutable.find("", empty + ":" + second, none, false));
+        eq("the first PATH entry that has it wins", inSecond, ClaudeExecutable.find(null, second + ":" + fallback, fallbacks, false));
+        eq("a file that is not executable is skipped", inSecond, ClaudeExecutable.find(null, first + ":" + second, none, false));
+        eq("the PATH comes before the fallback directories", inSecond, ClaudeExecutable.find(null, second.toString(), fallbacks, false));
+        eq("a fallback directory when the PATH has none", inFallback, ClaudeExecutable.find(null, empty.toString(), fallbacks, false));
+        eq("no PATH at all: the fallbacks", inFallback, ClaudeExecutable.find(null, null, fallbacks, false));
+        eq("not found anywhere", "null", String.valueOf(ClaudeExecutable.find(null, empty + "::", none, false)));
+        eq("a configured executable is used", custom, ClaudeExecutable.find(custom, second.toString(), none, false));
+        eq("a configured executable that does not exist is not replaced", "null",
+                String.valueOf(ClaudeExecutable.find(root.resolve("missing").toString(), second.toString(), none, false)));
+        eq("fallback directories under the home directory", true,
+                ClaudeExecutable.fallbackDirs("/Users/me", false).contains("/Users/me/.local/bin"));
+
+        java.nio.file.Path win = java.nio.file.Files.createDirectories(root.resolve("win"));
+        java.nio.file.Files.writeString(win.resolve("claude.exe"), "");
+        eq("Windows: claude.exe on a ;-separated PATH", win.resolve("claude.exe").toString(),
+                ClaudeExecutable.find(null, empty + ";" + win, none, true));
+    }
+
+    private static String executable(java.nio.file.Path file) throws java.io.IOException {
+        java.nio.file.Files.writeString(file, "#!/bin/sh\n");
+        file.toFile().setExecutable(true);
+        return file.toString();
     }
 }

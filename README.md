@@ -2,7 +2,8 @@
 
 An IntelliJ-platform plugin (built and compiled against CLion 2026.2). Select code, press a shortcut, type a
 question in a small popup, and it is sent to the Claude Code session running in the IDE's **Terminal** tool
-window, together with a file and line-range reference. The message is submitted; the editor keeps focus.
+window (started for you if none is running), together with a file and line-range reference. The message is
+submitted; the editor keeps focus.
 
 <img width="1024" height="929" alt="image" src="https://github.com/user-attachments/assets/0732d1eb-add5-4f9a-b0b0-4d35ade0237a" />
 
@@ -11,11 +12,12 @@ window, together with a file and line-range reference. The message is submitted;
 ## Requirements
 
 * CLion (or another IDE) of build 262 or later, with its bundled **Terminal** plugin enabled.
-* The Claude Code CLI, running in the IDE's Terminal tool window.
+* The Claude Code CLI (`claude`). It can already be running in the IDE's Terminal tool window, or the plugin starts it.
 
 ## Use
 
-1. Start `claude` in the IDE's Terminal tool window (any tab; the plugin finds it).
+1. Optionally start `claude` in the IDE's Terminal tool window (any tab; the plugin finds it). If you don't, the first
+   question starts it.
 2. Select code in an editor (or just put the caret on a line) and press **Ctrl+Alt+Shift+K**, or right-click and
    choose **Ask Claude...**.
 3. Optionally tick **Send text** (off by default; your choice is remembered), then type the question. The
@@ -26,14 +28,24 @@ window, together with a file and line-range reference. The message is submitted;
    message.
 
 The popup takes keyboard focus while you type, and gives it back to the editor when it closes. The Terminal tool
-window is never activated.
+window never takes focus.
+
+### No Claude session yet
+
+When no tab runs Claude Code, the popup says so ("sending starts one in a new Terminal tab"). Sending opens a new
+Terminal tab named **Claude Code** in the project directory, running `claude` with your message as its first prompt.
+The Terminal tool window is shown on that tab, but the editor keeps focus. The tab runs `claude` itself, not a shell,
+so it closes when Claude exits. Later questions go to this session.
+
+`claude` is looked for on the IDE's `PATH`, then in `~/.local/bin`, `~/.claude/local`, `/opt/homebrew/bin` and
+`/usr/local/bin` (`claude.exe` / `claude.cmd` on Windows). If it is somewhere else, set it in the settings.
 
 ### Several Claude sessions
 
 The plugin never guesses between sessions. It finds **every** tab of the Terminal tool window that runs Claude
 Code (by checking each tab's shell and the processes below it), and:
 
-* **none found**: you are told straight away, before you type anything;
+* **none found**: a new session is started (see above);
 * **one found**: it is used, with no extra UI;
 * **several found**: the popup shows a **Send to** list with each tab's title and working directory
   (`✳ Claude Code — ~/dev/project`). It starts on the session you used last, otherwise the tab selected in the
@@ -67,15 +79,21 @@ variable) if set, and otherwise downloads the IDE named in `gradle.properties`.
 The plugin logs what it inspects. In the IDE: Help → Show Log in Finder (`idea.log`), then search for
 `Ask Claude:`. It reports each Terminal tab, whether it has a process, and whether Claude was found in it.
 
-* **"No Claude Code is running in the IDE's Terminal tool window"**: Claude must run in the IDE's own Terminal, not
+* **A new session is started although Claude is already running**: Claude must run in the IDE's own Terminal, not
   an external terminal. If it is running there, check the log: each tab is listed with its process id and whether
   Claude was found below it.
+* **"Could not find the Claude Code executable"**: set **Claude Code executable** in the settings.
 * **Text appears but is not submitted**, or appears garbled: Claude Code may not be in bracketed-paste mode. For
   the classic terminal, `PromptEncoder.paste(message, false)` in `ClassicTerminals` sends plain typing instead.
 
 ## Settings
 
-**Settings | Tools | Ask Claude** has one option, **Claude Code process name**: a regular expression
+**Settings | Tools | Ask Claude** has two options.
+
+**Claude Code executable**: the program started when no session is running. Empty (the default) means find
+`claude` automatically, as described above.
+
+**Claude Code process name**: a regular expression
 (case-insensitive, default `claude`). A terminal tab counts as running Claude Code when one of its processes has an
 *executable file name* that contains a match. So `claude` matches `claude` and `claude-code-1.2.3.darwin-arm64`.
 

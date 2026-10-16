@@ -11,9 +11,10 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import java.util.regex.PatternSyntaxException;
 
-/** The settings page: how to recognise the Claude Code process. */
+/** The settings page: how to recognise the Claude Code process, and which executable to start. */
 public final class AskClaudeConfigurable implements Configurable {
     private JBTextField pattern;
+    private JBTextField executable;
 
     @Override
     public String getDisplayName() {
@@ -32,9 +33,19 @@ public final class AskClaudeConfigurable implements Configurable {
                 + "Default: <code>" + ClaudeProcessMatcher.DEFAULT_PATTERN + "</code></html>");
         help.setForeground(UIUtil.getContextHelpForeground());
 
+        executable = new JBTextField(30);
+        executable.getEmptyText().setText("Find automatically");
+        JBLabel executableHelp = new JBLabel("<html>Started in a new Terminal tab when no Claude Code session is running. "
+                + "Leave empty to look for <code>claude</code> on the PATH and in the usual install directories "
+                + "(<code>~/.local/bin</code>, <code>~/.claude/local</code>, <code>/opt/homebrew/bin</code>, "
+                + "<code>/usr/local/bin</code>).</html>");
+        executableHelp.setForeground(UIUtil.getContextHelpForeground());
+
         JPanel panel = FormBuilder.createFormBuilder()
                 .addLabeledComponent("Claude Code process name:", pattern)
                 .addComponent(help)
+                .addLabeledComponent("Claude Code executable:", executable)
+                .addComponent(executableHelp)
                 .addComponentFillVertically(new JPanel(), 0)
                 .getPanel();
         reset();
@@ -43,7 +54,9 @@ public final class AskClaudeConfigurable implements Configurable {
 
     @Override
     public boolean isModified() {
-        return pattern != null && !normalized(pattern.getText()).equals(AskClaudeSettings.getInstance().processPatternText());
+        AskClaudeSettings settings = AskClaudeSettings.getInstance();
+        return pattern != null && (!normalized(pattern.getText()).equals(settings.processPatternText())
+                || !executable.getText().strip().equals(settings.claudeExecutableText()));
     }
 
     @Override
@@ -55,16 +68,20 @@ public final class AskClaudeConfigurable implements Configurable {
             throw new ConfigurationException("Not a valid regular expression: " + invalid.getDescription());
         }
         AskClaudeSettings.getInstance().setProcessPatternText(text);
+        AskClaudeSettings.getInstance().setClaudeExecutableText(executable.getText());
     }
 
     @Override
     public void reset() {
-        if (pattern != null) pattern.setText(AskClaudeSettings.getInstance().processPatternText());
+        if (pattern == null) return;
+        pattern.setText(AskClaudeSettings.getInstance().processPatternText());
+        executable.setText(AskClaudeSettings.getInstance().claudeExecutableText());
     }
 
     @Override
     public void disposeUIResources() {
         pattern = null;
+        executable = null;
     }
 
     private static String normalized(String text) {

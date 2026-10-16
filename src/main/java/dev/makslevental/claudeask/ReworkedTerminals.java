@@ -2,10 +2,15 @@ package dev.makslevental.claudeask;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.wm.ToolWindow;
+import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.terminal.frontend.toolwindow.TerminalToolWindowTab;
+import com.intellij.terminal.frontend.toolwindow.TerminalToolWindowTabBuilder;
 import com.intellij.terminal.frontend.toolwindow.TerminalToolWindowTabsManager;
 import com.intellij.terminal.frontend.view.TerminalView;
 import com.intellij.ui.content.Content;
+import com.intellij.ui.content.ContentManager;
+import kotlin.Unit;
 import kotlinx.coroutines.Deferred;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.plugins.terminal.session.TerminalStartupOptions;
@@ -29,6 +34,35 @@ final class ReworkedTerminals {
             all.add(tab(tab, processId(tab.getView()), tab.getContent() == selected));
         }
         return all;
+    }
+
+    /**
+     * Opens a new tab that runs {@code command} itself (no shell) in {@code directory}, and shows the Terminal tool
+     * window on it without taking focus. Once the process has started, its tab becomes the last-used session, so
+     * later questions go to it.
+     */
+    static void openTab(Project project, List<String> command, @Nullable String directory, String tabName) {
+        TerminalToolWindowTabBuilder builder = TerminalToolWindowTabsManager.getInstance(project).createTabBuilder()
+                .shellCommand(command)
+                .tabName(tabName)
+                .requestFocus(false)
+                .deferSessionStartUntilUiShown(false);
+        if (directory != null) builder.workingDirectory(directory);
+        TerminalToolWindowTab tab = builder.createTab();
+
+        ContentManager contents = tab.getContent().getManager();
+        if (contents != null) contents.setSelectedContent(tab.getContent(), false);
+        ToolWindow toolWindow = ToolWindowManager.getInstance(project).getToolWindow("Terminal");
+        if (toolWindow != null) toolWindow.show(); // show, unlike activate, leaves focus in the editor
+
+        Deferred<TerminalStartupOptions> options = tab.getView().getStartupOptionsDeferred();
+        options.invokeOnCompletion(failure -> {
+            if (failure == null) {
+                Long pid = options.getCompleted().getPid();
+                if (pid != null) LastChoice.set(project, pid);
+            }
+            return Unit.INSTANCE;
+        });
     }
 
     /** The shell's process id, or -1 while the session has not started or cannot be read. */

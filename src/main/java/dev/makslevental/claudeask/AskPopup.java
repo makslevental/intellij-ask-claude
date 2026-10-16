@@ -24,14 +24,18 @@ import java.util.function.Consumer;
 /**
  * The small prompt box shown next to the selection. Enter sends, Shift+Enter or Option/Alt+Enter inserts a newline,
  * Escape closes.
- * When several Claude Code terminals are running, a "Send to" list names each one (Alt+Up/Down changes it).
+ * When several Claude Code terminals are running, a "Send to" list names each one (Alt+Up/Down changes it). When
+ * none is, it says that sending starts one.
  * The popup takes keyboard focus while it is open (it has to, to be typed into) and hands it back to the editor
  * when it closes.
  */
 public final class AskPopup {
     private AskPopup() {}
 
-    /** What the user chose: the question, the terminal to send it to, and whether to attach the selected code. */
+    /**
+     * What the user chose: the question, the terminal to send it to (null to start a new session), and whether to
+     * attach the selected code.
+     */
     public record Submission(String question, TerminalTarget target, boolean includeSelection) {}
 
     public static void show(Editor editor, String pointer, List<TerminalTarget> targets, int defaultIndex,
@@ -44,7 +48,9 @@ public final class AskPopup {
         JPanel top = new JPanel(new GridLayout(0, 1, 0, JBUI.scale(4)));
         top.add(new JBLabel(pointer));
         ComboBox<String> chooser = null;
-        if (targets.size() > 1) {
+        if (targets.isEmpty()) {
+            top.add(new JBLabel("No Claude Code session is running: sending starts one in a new Terminal tab"));
+        } else if (targets.size() > 1) {
             chooser = new ComboBox<>(targets.stream().map(TerminalTarget::label).toArray(String[]::new));
             chooser.setSelectedIndex(defaultIndex);
             JPanel row = new JPanel(new BorderLayout(JBUI.scale(6), 0));
@@ -90,7 +96,7 @@ public final class AskPopup {
                 boolean attach = hasSelectedText && include.isSelected();
                 if (hasSelectedText) LastChoice.setIncludeText(include.isSelected());
                 popup.closeOk(null);
-                onSend.accept(new Submission(text, targets.get(index), attach));
+                onSend.accept(new Submission(text, targets.isEmpty() ? null : targets.get(index), attach));
             }
         });
         input.getActionMap().put("newline", new AbstractAction() {

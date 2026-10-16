@@ -19,7 +19,10 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-/** "Ask Claude...": opens the prompt box for the current selection (or caret line) and sends the result. */
+/**
+ * "Ask Claude...": opens the prompt box for the current selection (or caret line) and sends the result, starting a
+ * Claude Code session first when none is running.
+ */
 public final class AskClaudeAction extends AnAction implements DumbAware {
     private static final Logger LOG = Logger.getInstance(AskClaudeAction.class);
 
@@ -77,12 +80,6 @@ public final class AskClaudeAction extends AnAction implements DumbAware {
 
     private static void showPopup(Project project, Editor editor, String pointer, List<TerminalTarget> targets,
                                   String selectedText, String language) {
-        if (targets.isEmpty()) {
-            // Say so before the user has typed anything.
-            Notices.show(project, "No Claude Code is running in the IDE's Terminal tool window. Start `claude` there first.",
-                    NotificationType.WARNING);
-            return;
-        }
         List<Long> ids = targets.stream().map(TerminalTarget::id).toList();
         List<Boolean> selected = targets.stream().map(TerminalTarget::isSelected).toList();
         int start = TargetChoice.defaultIndex(ids, selected, LastChoice.get(project));
@@ -91,7 +88,11 @@ public final class AskClaudeAction extends AnAction implements DumbAware {
             String message = submission.includeSelection()
                     ? PromptEncoder.message(pointer, submission.question(), selectedText, language)
                     : PromptEncoder.message(pointer, submission.question());
-            ClaudeTerminalSender.send(project, submission.target(), message);
+            if (submission.target() == null) {
+                ClaudeLauncher.start(project, message);
+            } else {
+                ClaudeTerminalSender.send(project, submission.target(), message);
+            }
         });
     }
 
