@@ -4,6 +4,7 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
+import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.components.JBTextArea;
@@ -18,7 +19,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.util.List;
-import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 /**
  * The small prompt box shown next to the selection. Enter sends, Shift+Enter or Option/Alt+Enter inserts a newline,
@@ -30,8 +31,11 @@ import java.util.function.BiConsumer;
 public final class AskPopup {
     private AskPopup() {}
 
+    /** What the user chose: the question, the terminal to send it to, and whether to attach the selected code. */
+    public record Submission(String question, TerminalTarget target, boolean includeSelection) {}
+
     public static void show(Editor editor, String pointer, List<TerminalTarget> targets, int defaultIndex,
-                            BiConsumer<String, TerminalTarget> onSend) {
+                            boolean hasSelectedText, Consumer<Submission> onSend) {
         JBTextArea input = new JBTextArea(3, 56);
         input.setLineWrap(true);
         input.setWrapStyleWord(true);
@@ -50,6 +54,9 @@ public final class AskPopup {
             top.add(new JBLabel("Alt+Up / Alt+Down changes the session"));
         }
         final ComboBox<String> sessions = chooser;
+
+        JBCheckBox include = new JBCheckBox("Include the selected text", LastChoice.includeText());
+        if (hasSelectedText) top.add(include);
 
         JPanel panel = new JPanel(new BorderLayout(0, JBUI.scale(6)));
         panel.setBorder(JBUI.Borders.empty(8));
@@ -79,8 +86,10 @@ public final class AskPopup {
                 String text = input.getText().strip();
                 if (text.isEmpty()) return;
                 int index = sessions == null ? 0 : Math.max(0, sessions.getSelectedIndex());
+                boolean attach = hasSelectedText && include.isSelected();
+                if (hasSelectedText) LastChoice.setIncludeText(include.isSelected());
                 popup.closeOk(null);
-                onSend.accept(text, targets.get(index));
+                onSend.accept(new Submission(text, targets.get(index), attach));
             }
         });
         input.getActionMap().put("newline", new AbstractAction() {

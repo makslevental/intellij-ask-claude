@@ -9,6 +9,8 @@ import java.util.WeakHashMap;
 final class LastChoice {
     private static final Map<Project, Long> LAST = new WeakHashMap<>();
 
+    private static boolean includeText = true;
+
     private LastChoice() {}
 
     static synchronized Long get(Project project) {
@@ -17,5 +19,14 @@ final class LastChoice {
 
     static synchronized void set(Project project, long id) {
         LAST.put(project, id);
+    }
+
+    /** Whether the "Include the selected text" box was ticked last time (it starts ticked). */
+    static synchronized boolean includeText() {
+        return includeText;
+    }
+
+    static synchronized void setIncludeText(boolean value) {
+        includeText = value;
     }
 }

@@ -84,6 +84,28 @@ public final class Tests {
         eq("a multi-line question keeps its line breaks", "@a.c#L1 first\nsecond\n  third", PromptEncoder.message("@a.c#L1", "first\nsecond\n  third\n"));
         eq("a multi-line paste keeps its line breaks", "\u001b[200~a\nb\u001b[201~", PromptEncoder.paste("a\nb", true));
 
+
+        eq("selected code is appended as a fenced block",
+                "@a.c#L1-2 why?\n\nSelected code:\n```c\nint x;\n  y();\n```",
+                PromptEncoder.message("@a.c#L1-2", "why?", "int x;\n  y();\n", "c"));
+        eq("a blank selection adds nothing", "@a.c#L1 why?", PromptEncoder.message("@a.c#L1", "why?", "  \n ", "c"));
+        eq("a null selection adds nothing", "@a.c#L1 why?", PromptEncoder.message("@a.c#L1", "why?", null, "c"));
+        eq("no language: a bare fence", "@a.c#L1 q\n\nSelected code:\n```\nx\n```", PromptEncoder.message("@a.c#L1", "q", "x", null));
+        eq("unsafe characters leave the language tag", "c++x", PromptEncoder.safeLanguage("c++`\n x"));
+        eq("fence grows past backticks in the code", "````", PromptEncoder.fenceFor("a ``` b"));
+        eq("fence is three backticks at least", "```", PromptEncoder.fenceFor("plain"));
+        eq("a single backtick needs no longer fence", "```", PromptEncoder.fenceFor("a `x` b"));
+        eq("selection with its own fence gets a longer one",
+                "@a.md#L1 q\n\nSelected code:\n````md\n```c\nx\n```\n````",
+                PromptEncoder.message("@a.md#L1", "q", "```c\nx\n```", "md"));
+        eq("CRLF in the selection becomes LF",
+                "@a.c#L1 q\n\nSelected code:\n```\na\nb\n```",
+                PromptEncoder.message("@a.c#L1", "q", "a\r\nb\r\n", ""));
+        String longCode = "x".repeat(PromptEncoder.MAX_SELECTED_CHARS + 5);
+        String cut = PromptEncoder.message("@a.c#L1", "q", longCode, "c");
+        eq("an overlong selection is cut with a note", true, cut.endsWith("\n```\n(\u2026 5 more characters not shown)"));
+        eq("the cut selection keeps the maximum", true, cut.contains("x".repeat(PromptEncoder.MAX_SELECTED_CHARS) + "\n```"));
+
         System.out.println(failures == 0 ? "\nall passed" : "\n" + failures + " FAILED");
         System.exit(failures == 0 ? 0 : 1);
     }

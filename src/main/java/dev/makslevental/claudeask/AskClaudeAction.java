@@ -57,8 +57,16 @@ public final class AskClaudeAction extends AnAction implements DumbAware {
         List<Long> ids = targets.stream().map(TerminalTarget::id).toList();
         List<Boolean> selected = targets.stream().map(TerminalTarget::isSelected).toList();
         int start = TargetChoice.defaultIndex(ids, selected, LastChoice.get(project));
-        AskPopup.show(editor, pointer, targets, start, (question, target) ->
-                ClaudeTerminalSender.send(project, target, PromptEncoder.message(pointer, question)));
+        SelectionModel selection = editor.getSelectionModel();
+        String selectedText = selection.hasSelection() ? selection.getSelectedText() : null;
+        boolean hasText = selectedText != null && !selectedText.isBlank();
+        String language = file.getExtension();
+        AskPopup.show(editor, pointer, targets, start, hasText, submission -> {
+            String message = submission.includeSelection()
+                    ? PromptEncoder.message(pointer, submission.question(), selectedText, language)
+                    : PromptEncoder.message(pointer, submission.question());
+            ClaudeTerminalSender.send(project, submission.target(), message);
+        });
     }
 
     private static String pointerFor(Project project, Editor editor, VirtualFile file) {
