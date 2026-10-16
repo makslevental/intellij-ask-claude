@@ -1,13 +1,19 @@
 #!/bin/sh
-# Builds the plugin without Gradle, against the jars of a locally installed CLion (no network needed).
+# Builds the plugin without Gradle, against the jars of an IDE installed on this machine (no network needed).
 # Output: build/ask-claude.zip (install via Settings > Plugins > gear > Install Plugin from Disk).
-# Override the IDE location with IDE_HOME=/path/to/CLion.app/Contents.
+# The IDE is found automatically (the newest one of build 262+); set IDE_HOME to choose another.
 set -e
 cd "$(dirname "$0")/.."
-IDE_HOME="${IDE_HOME:-$HOME/Applications/CLion.app/Contents}"
-JAVAC="$IDE_HOME/jbr/Contents/Home/bin/javac"
+. scripts/lib.sh
 
-CP=$(ls "$IDE_HOME"/lib/*.jar "$IDE_HOME"/plugins/terminal/lib/*.jar "$IDE_HOME"/plugins/terminal/lib/modules/*.jar | tr '\n' ':')
+IDE=$(find_ide)
+JAVAC=$(find_javac "$IDE")
+
+CP=""
+for jar in "$IDE"/lib/*.jar "$IDE"/plugins/terminal/lib/*.jar "$IDE"/plugins/terminal/lib/modules/*.jar; do
+  [ -f "$jar" ] && CP="$CP$jar:"
+done
+
 rm -rf build/classes build/plugin build/ask-claude.zip
 mkdir -p build/classes build/plugin/ask-claude/lib
 

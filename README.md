@@ -76,14 +76,21 @@ external terminal is never a target.
 ## Build and install
 
 ```sh
-scripts/test.sh          # plain-Java tests for the pure classes
-scripts/build-local.sh   # compiles against your CLion's jars (no network) -> build/ask-claude.zip
+scripts/test.sh          # plain-Java tests for the pure classes (needs a JDK 21+)
+scripts/build-local.sh   # compiles against an installed IDE's jars (no network) -> build/ask-claude.zip
 ```
+
+The scripts find an installed IDE of build 262 or newer that has the Terminal plugin (macOS apps, Linux `/opt`,
+and JetBrains Toolbox installs), use the newest one, and say which. To pick another, set `IDE_HOME`, e.g.
+`IDE_HOME=/Applications/CLion.app scripts/build-local.sh`. They need a JDK 21+; the IDE's bundled runtime is used
+when it includes a compiler, otherwise `JAVA_HOME` or `javac` on the `PATH`. They are shell scripts, so on Windows
+use Gradle instead.
 
 Then in the IDE: Settings → Plugins → ⚙ → **Install Plugin from Disk...** → `build/ask-claude.zip`, and restart.
 
 `build.gradle.kts` is the standard IntelliJ Platform Gradle setup, but it was written without being able to run
-Gradle, so treat it as a starting point. Set `ideHome` in `gradle.properties`.
+Gradle, so treat it as a starting point. It builds against `ideHome` (a property) or `IDE_HOME` (an environment
+variable) if set, and otherwise downloads the IDE named in `gradle.properties`.
 
 ## If it does not work
 

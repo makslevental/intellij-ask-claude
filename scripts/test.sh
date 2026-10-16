@@ -1,14 +1,20 @@
 #!/bin/sh
-# Compiles and runs the plain-Java tests for the pure classes. Needs only a JDK (CLion's bundled one works).
+# Compiles and runs the plain-Java tests for the pure classes. Needs only a JDK 21+ (the IDE's bundled one is
+# used if an IDE is installed, otherwise JAVA_HOME or the one on PATH).
 set -e
 cd "$(dirname "$0")/.."
-JAVA_HOME="${JAVA_HOME:-$HOME/Applications/CLion.app/Contents/jbr/Contents/Home}"
+. scripts/lib.sh
+
+IDE=$( (find_ide 2>/dev/null) || true)
+JAVAC=$(find_javac "$IDE")
+JAVA="$(dirname "$JAVAC")/java"
+
 OUT=build/test-classes
 rm -rf "$OUT"; mkdir -p "$OUT"
-"$JAVA_HOME/bin/javac" --release 21 -d "$OUT" \
+"$JAVAC" --release 21 -d "$OUT" \
   src/main/java/dev/makslevental/claudeask/SelectionPointer.java \
   src/main/java/dev/makslevental/claudeask/PromptEncoder.java \
   src/main/java/dev/makslevental/claudeask/ClaudeProcessMatcher.java \
   src/main/java/dev/makslevental/claudeask/TargetChoice.java \
   src/test/java/dev/makslevental/claudeask/Tests.java
-"$JAVA_HOME/bin/java" -cp "$OUT" dev.makslevental.claudeask.Tests
+"$JAVA" -cp "$OUT" dev.makslevental.claudeask.Tests

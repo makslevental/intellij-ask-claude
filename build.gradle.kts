@@ -17,9 +17,16 @@ java {
     toolchain { languageVersion = JavaLanguageVersion.of(21) }
 }
 
+// An IDE you already have (property `ideHome`, else the IDE_HOME environment variable), or a download.
+val ideHome = providers.gradleProperty("ideHome").orElse(providers.environmentVariable("IDE_HOME"))
+
 dependencies {
     intellijPlatform {
-        local(file(providers.gradleProperty("ideHome").get()))
+        if (ideHome.isPresent) {
+            local(file(ideHome.get()))
+        } else {
+            create(providers.gradleProperty("platformType").get(), providers.gradleProperty("platformVersion").get())
+        }
         bundledPlugin("org.jetbrains.plugins.terminal")
     }
 }
