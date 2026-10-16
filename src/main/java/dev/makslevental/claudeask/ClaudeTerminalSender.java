@@ -5,21 +5,15 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 
-/** Sends a message to the terminal where Claude Code runs. Writes to the terminal, so the editor keeps focus. */
+/** Sends a message to a chosen Claude Code terminal. Writes to the terminal, so the editor keeps focus. */
 public final class ClaudeTerminalSender {
     private static final Logger LOG = Logger.getInstance(ClaudeTerminalSender.class);
 
     private ClaudeTerminalSender() {}
 
-    /** Returns false (after telling the user) when no terminal running Claude Code is found. */
-    public static boolean send(Project project, String message) {
-        TerminalTarget target = ClaudeTerminalLocator.find(project);
-        if (target == null) {
-            Notices.show(project, "No Claude Code is running in the IDE's Terminal tool window. Start `claude` there first.",
-                    NotificationType.WARNING);
-            return false;
-        }
+    public static void send(Project project, TerminalTarget target, String message) {
         LOG.info("Ask Claude: sending " + message.length() + " characters to tab '" + target.title() + "'");
+        LastChoice.set(project, target.id());
         // Off the UI thread: the classic terminal sleeps briefly between the paste and Enter.
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
@@ -31,6 +25,5 @@ public final class ClaudeTerminalSender {
                 Notices.show(project, "Could not send to the Claude Code terminal: " + e.getMessage(), NotificationType.ERROR);
             }
         });
-        return true;
     }
 }

@@ -25,19 +25,34 @@ and has not yet been run end to end. See "If it does not work".
 The popup takes keyboard focus while you type, and gives it back to the editor when it closes. The Terminal tool
 window is never activated.
 
+### Several Claude sessions
+
+The plugin never guesses between sessions. It finds **every** tab of the Terminal tool window that runs Claude
+Code (by checking each tab's shell and the processes below it), and:
+
+* **none found**: you are told straight away, before you type anything;
+* **one found**: it is used, with no extra UI;
+* **several found**: the popup shows a **Send to** list with each tab's title and working directory
+  (`✳ Claude Code — ~/dev/project`). It starts on the session you used last, otherwise the tab selected in the
+  Terminal tool window. Change it with the mouse or **Alt+Up / Alt+Down**.
+
+A tab whose process could not be read, and which was picked only because its title says "Claude", is labelled
+"(guessed from the title)". Only the IDE's own Terminal tool window is searched, so another project's window or an
+external terminal is never a target.
+
 ## How it works
 
 * `SelectionPointer` builds `@path#L10-20` (relative to the project, absolute outside it; a selection ending at
   column 0 does not include that last line).
-* `ClaudeTerminalLocator` walks the Terminal tool window's tabs and picks the one whose shell, or any process
-  below it, is Claude Code (`ClaudeProcessMatcher`). The selected tab wins when several tabs run Claude. Both
+* `ClaudeTerminalLocator` walks the Terminal tool window's tabs and lists the tabs whose shell, or any process
+  below it, is Claude Code (`ClaudeProcessMatcher`); the user picks when there are several (`TargetChoice`). Both
   kinds of terminal are supported:
   * **reworked terminal** (the default in recent IDEs; `ReworkedTerminals`): the tab's shell process id comes
     from its terminal session, and the text goes in through the IDE's own `TerminalSendTextBuilder` as a
     bracketed paste followed by Enter;
   * **classic terminal** (`ClassicTerminals`): the text is written to the terminal's process as a bracketed
     paste, a 150 ms pause, then Enter.
-  If no process can be read, a single tab titled like "Claude" is used.
+  If no process can be read for any tab, a single tab titled like "Claude" is offered, labelled as a guess.
 * Neither path activates the Terminal tool window, which is what keeps focus in the editor.
 
 ## Build and install

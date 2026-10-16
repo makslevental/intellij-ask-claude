@@ -67,6 +67,19 @@ public final class Tests {
         eq("a directory named claude-notes is not claude", false,
                 ClaudeProcessMatcher.isClaude("/bin/ls", new String[] {"/home/me/claude-notes/"}));
 
+
+        eq("default: the last used tab if still present", 2, TargetChoice.defaultIndex(java.util.List.of(10L, 11L, 12L), java.util.List.of(true, false, false), 12L));
+        eq("default: the selected tab when the last one is gone", 1, TargetChoice.defaultIndex(java.util.List.of(10L, 11L), java.util.List.of(false, true), 99L));
+        eq("default: the selected tab when nothing was used yet", 1, TargetChoice.defaultIndex(java.util.List.of(10L, 11L), java.util.List.of(false, true), null));
+        eq("default: the first when nothing is selected", 0, TargetChoice.defaultIndex(java.util.List.of(10L, 11L), java.util.List.of(false, false), null));
+        eq("label with title and directory", "\u2733 Claude Code \u2014 ~/dev/proj", TargetChoice.label("\u2733 Claude Code", "/Users/me/dev/proj", "/Users/me", true));
+        eq("label outside home keeps the path", "t \u2014 /opt/x", TargetChoice.label("t", "/opt/x", "/Users/me", true));
+        eq("label for home itself", "t \u2014 ~", TargetChoice.label("t", "/Users/me", "/Users/me", true));
+        eq("a sibling of home is not shortened", "t \u2014 /Users/meagain/x", TargetChoice.label("t", "/Users/meagain/x", "/Users/me", true));
+        eq("label without directory", "t", TargetChoice.label("t", null, "/Users/me", true));
+        eq("label for a guessed tab", "t (guessed from the title)", TargetChoice.label("t", "", "/Users/me", false));
+        eq("blank title falls back", "Terminal", TargetChoice.label(" ", null, null, true));
+
         System.out.println(failures == 0 ? "\nall passed" : "\n" + failures + " FAILED");
         System.exit(failures == 0 ? 0 : 1);
     }

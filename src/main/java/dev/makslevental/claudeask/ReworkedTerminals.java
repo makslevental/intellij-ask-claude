@@ -5,6 +5,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.terminal.frontend.toolwindow.TerminalToolWindowTab;
 import com.intellij.terminal.frontend.toolwindow.TerminalToolWindowTabsManager;
 import com.intellij.terminal.frontend.view.TerminalView;
+import com.intellij.ui.content.Content;
 import kotlinx.coroutines.Deferred;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.plugins.terminal.session.impl.TerminalSession;
@@ -21,35 +22,35 @@ final class ReworkedTerminals {
 
     private ReworkedTerminals() {}
 
-    /** @param selectedTitle the title of the selected tab, tried first; may be null */
-    @Nullable
-    static TerminalTarget find(Project project, @Nullable String selectedTitle) {
+    /**
+     * Every reworked tab that runs Claude, in tab order. When no tab's process could be read, a single tab titled
+     * like "Claude" is returned instead, marked as unverified.
+     */
+    static List<TerminalTarget> findAll(Project project, @Nullable Content selected) {
         List<TerminalToolWindowTab> tabs = new ArrayList<>(TerminalToolWindowTabsManager.getInstance(project).getTabs());
-        tabs.sort((a, b) -> Boolean.compare(!isSelected(b, selectedTitle), !isSelected(a, selectedTitle)));
-
-        TerminalToolWindowTab byTitle = null;
-        int titled = 0;
+        List<TerminalTarget> found = new ArrayList<>();
+        List<TerminalToolWindowTab> titled = new ArrayList<>();
+        boolean anyUnreadable = false;
         for (TerminalToolWindowTab tab : tabs) {
             String title = tab.getContent().getTabName();
             long pid = processId(tab.getView());
             boolean claude = pid > 0 && ClaudeProcesses.isClaudeRunning(pid);
             LOG.info("Ask Claude: reworked tab '" + title + "' pid " + (pid > 0 ? pid : "unknown") + " runs claude: " + claude);
-            if (claude) return target(tab);
-            if (title != null && title.toLowerCase().contains("claude")) {
-                titled++;
-                byTitle = tab;
+            if (pid <= 0) anyUnreadable = true;
+            if (claude) {
+                found.add(target(tab, pid, true, tab.getContent() == selected));
+            } else if (pid <= 0 && title != null && title.toLowerCase().contains("claude")) {
+                titled.add(tab);
             }
         }
-        // Process ids are not always readable; a single tab titled "Claude ..." is a good enough second guess.
-        if (titled == 1) {
-            LOG.info("Ask Claude: no process matched; using the one tab titled like Claude");
-            return target(byTitle);
+        // Process ids are not always readable. Only when none matched, and exactly one unreadable tab is titled like
+        // Claude, offer that one, labelled as a guess.
+        if (found.isEmpty() && anyUnreadable && titled.size() == 1) {
+            LOG.info("Ask Claude: no process matched; offering the one tab titled like Claude");
+            TerminalToolWindowTab tab = titled.get(0);
+            found.add(target(tab, System.identityHashCode(tab), false, tab.getContent() == selected));
         }
-        return null;
-    }
-
-    private static boolean isSelected(TerminalToolWindowTab tab, @Nullable String selectedTitle) {
-        return selectedTitle != null && selectedTitle.equals(tab.getContent().getTabName());
+        return found;
     }
 
     /** The shell's process id, or -1 while the session has not started or cannot be read. */
@@ -64,13 +65,38 @@ final class ReworkedTerminals {
         }
     }
 
-    private static TerminalTarget target(TerminalToolWindowTab tab) {
+    private static TerminalTarget target(TerminalToolWindowTab tab, long id, boolean verified, boolean isSelected) {
         TerminalView view = tab.getView();
         String title = tab.getContent().getTabName();
         return new TerminalTarget() {
             @Override
+            public long id() {
+                return id;
+            }
+
+            @Override
             public String title() {
                 return title;
+            }
+
+            @Override
+            public String directory() {
+                try {
+                    java.nio.file.Path directory = view.getWorkingDirectoryFlow().getValue();
+                    return directory == null ? null : directory.toString();
+                } catch (RuntimeException e) {
+                    return null;
+                }
+            }
+
+            @Override
+            public boolean isVerified() {
+                return verified;
+            }
+
+            @Override
+            public boolean isSelected() {
+                return isSelected;
             }
 
             @Override

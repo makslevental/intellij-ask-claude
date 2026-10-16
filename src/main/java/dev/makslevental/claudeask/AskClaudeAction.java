@@ -13,6 +13,8 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
+
 /** "Ask Claude...": opens the prompt box for the current selection (or caret line) and sends the result. */
 public final class AskClaudeAction extends AnAction implements DumbAware {
 
@@ -36,17 +38,27 @@ public final class AskClaudeAction extends AnAction implements DumbAware {
         VirtualFile file = e.getData(CommonDataKeys.VIRTUAL_FILE);
         if (project == null || editor == null || file == null) return;
 
+        List<TerminalTarget> targets;
+        try {
+            targets = ClaudeTerminalLocator.findAll(project);
+        } catch (LinkageError missing) {
+            // The Terminal plugin's classes are absent or incompatible with this IDE build.
+            Notices.show(project, "Ask Claude needs the Terminal plugin (" + missing + ").", NotificationType.ERROR);
+            return;
+        }
+        if (targets.isEmpty()) {
+            // Say so before the user has typed anything.
+            Notices.show(project, "No Claude Code is running in the IDE's Terminal tool window. Start `claude` there first.",
+                    NotificationType.WARNING);
+            return;
+        }
+
         String pointer = pointerFor(project, editor, file);
-        AskPopup.show(editor, pointer, question -> {
-            String message = PromptEncoder.message(pointer, question);
-            try {
-                ClaudeTerminalSender.send(project, message);
-            } catch (LinkageError missing) {
-                // The Terminal plugin is optional for loading; without it the terminal classes are absent.
-                Notices.show(project, "Ask Claude needs the Terminal plugin. Enable it in Settings > Plugins "
-                        + "(" + missing + ").", NotificationType.ERROR);
-            }
-        });
+        List<Long> ids = targets.stream().map(TerminalTarget::id).toList();
+        List<Boolean> selected = targets.stream().map(TerminalTarget::isSelected).toList();
+        int start = TargetChoice.defaultIndex(ids, selected, LastChoice.get(project));
+        AskPopup.show(editor, pointer, targets, start, (question, target) ->
+                ClaudeTerminalSender.send(project, target, PromptEncoder.message(pointer, question)));
     }
 
     private static String pointerFor(Project project, Editor editor, VirtualFile file) {

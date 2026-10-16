@@ -12,6 +12,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.plugins.terminal.ProxyTtyConnector;
 import org.jetbrains.plugins.terminal.TerminalToolWindowManager;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /** The classic (jediterm) terminal: tabs that have a {@link TerminalWidget}. Written to like a pty. */
@@ -22,8 +23,9 @@ final class ClassicTerminals {
 
     private ClassicTerminals() {}
 
-    @Nullable
-    static TerminalTarget find(Project project, ToolWindow toolWindow, List<Content> contents) {
+    /** Every classic tab that runs Claude, in tab order. */
+    static List<TerminalTarget> findAll(Project project, ToolWindow toolWindow, List<Content> contents, @Nullable Content selected) {
+        List<TerminalTarget> found = new ArrayList<>();
         for (Content content : contents) {
             TerminalWidget widget = TerminalToolWindowManager.findWidgetByContent(content);
             if (widget == null) continue; // a tab of the reworked terminal, handled elsewhere
@@ -35,25 +37,46 @@ final class ClassicTerminals {
             Process shell = process.getProcess();
             boolean claude = shell != null && shell.isAlive() && ClaudeProcesses.isClaudeRunning(shell.toHandle());
             LOG.info("Ask Claude: classic tab '" + content.getTabName() + "' runs claude: " + claude);
-            if (claude) {
-                String title = content.getTabName();
-                return new TerminalTarget() {
-                    @Override
-                    public String title() {
-                        return title;
-                    }
+            if (!claude) continue;
+            long id = shell.pid();
+            String title = content.getTabName();
+            boolean isSelected = content == selected;
+            found.add(new TerminalTarget() {
+                @Override
+                public long id() {
+                    return id;
+                }
 
-                    @Override
-                    public boolean send(String message) throws Exception {
-                        connector.write(PromptEncoder.paste(message, true));
-                        Thread.sleep(ENTER_DELAY_MS);
-                        connector.write(PromptEncoder.ENTER);
-                        return true;
-                    }
-                };
-            }
+                @Override
+                public String title() {
+                    return title;
+                }
+
+                @Override
+                public String directory() {
+                    return null; // the classic widget does not expose it reliably
+                }
+
+                @Override
+                public boolean isVerified() {
+                    return true;
+                }
+
+                @Override
+                public boolean isSelected() {
+                    return isSelected;
+                }
+
+                @Override
+                public boolean send(String message) throws Exception {
+                    connector.write(PromptEncoder.paste(message, true));
+                    Thread.sleep(ENTER_DELAY_MS);
+                    connector.write(PromptEncoder.ENTER);
+                    return true;
+                }
+            });
         }
-        return null;
+        return found;
     }
 
     @Nullable
