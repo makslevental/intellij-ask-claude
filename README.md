@@ -1,4 +1,4 @@
-# claude-intellij-ask
+# intellij-ask-claude
 
 An IntelliJ-platform plugin (built and compiled against CLion 2026.2). Select code, press a shortcut, type a
 question in a small popup, and it is sent to the Claude Code session running in the IDE's **Terminal** tool

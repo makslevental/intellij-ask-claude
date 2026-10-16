@@ -1,5 +1,5 @@
 <idea-plugin>
-  <id>dev.makslevental.claude-intellij-ask</id>
+  <id>dev.makslevental.intellij-ask-claude</id>
   <name>Ask Claude</name>
   <version>0.1.0</version>
   <vendor email="maksim.levental@gmail.com">makslevental</vendor>
