@@ -55,7 +55,8 @@ public final class AskPopup {
         }
         final ComboBox<String> sessions = chooser;
 
-        JBCheckBox include = new JBCheckBox("Include the selected text", LastChoice.includeText());
+        JBCheckBox include = new JBCheckBox("Send text", LastChoice.includeText());
+        include.setToolTipText("Also paste the selected code into the message. The @file#L reference already makes Claude read those lines from disk; this matters for unsaved edits or part of a line.");
         if (hasSelectedText) top.add(include);
 
         JPanel panel = new JPanel(new BorderLayout(0, JBUI.scale(6)));

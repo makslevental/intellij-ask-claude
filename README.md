@@ -32,7 +32,9 @@ and has not yet been run end to end. See "If it does not work".
 1. Start `claude` in the IDE's Terminal tool window (any tab; the plugin finds it).
 2. Select code in an editor (or just put the caret on a line) and press **Ctrl+Alt+Shift+K**, or right-click and
    choose **Ask Claude...**.
-3. Tick or untick **Include the selected text** (ticked by default, and remembered), then type the question. **Enter** sends, **Shift+Enter** or **Option+Enter** (Alt+Enter outside macOS) adds a new line,
+3. Optionally tick **Send text** (off by default; your choice is remembered), then type the question. The
+   `@file#L10-20` reference already makes Claude Code read those lines from disk, so the text is only needed for
+   unsaved edits or a selection that is part of a line (the reference cannot carry columns). **Enter** sends, **Shift+Enter** or **Option+Enter** (Alt+Enter outside macOS) adds a new line,
    **Esc** cancels. A multi-line question is sent as one message.
 
 The popup takes keyboard focus while you type, and gives it back to the editor when it closes. The Terminal tool
@@ -57,7 +59,7 @@ external terminal is never a target.
 
 * `SelectionPointer` builds `@path#L10-20` (relative to the project, absolute outside it; a selection ending at
   column 0 does not include that last line).
-* `PromptEncoder` builds the message: the pointer and question on the first line, then the selected code in a
+* `PromptEncoder` builds the message: the pointer and question on the first line, then, when **Send text** is ticked, the selected code in a
   fenced block (a longer fence if the code contains backticks; selections over 20,000 characters are cut with a
   note, since the pointer lets Claude read the rest). With nothing selected only the line pointer is sent.
 * `ClaudeTerminalLocator` walks the Terminal tool window's tabs and lists the tabs whose shell, or any process
