@@ -11,7 +11,8 @@
   ]]></description>
   <idea-version since-build="262"/>
   <depends>com.intellij.modules.platform</depends>
-  <depends>org.jetbrains.plugins.terminal</depends>
+  <!-- Optional so that the plugin loads even if the Terminal plugin is disabled; sending then reports it. -->
+  <depends optional="true" config-file="ask-claude-terminal.xml">org.jetbrains.plugins.terminal</depends>
 
   <extensions defaultExtensionNs="com.intellij">
     <notificationGroup id="Ask Claude" displayType="BALLOON"/>

@@ -39,7 +39,13 @@ public final class AskClaudeAction extends AnAction implements DumbAware {
         String pointer = pointerFor(project, editor, file);
         AskPopup.show(editor, pointer, question -> {
             String message = PromptEncoder.message(pointer, question);
-            ClaudeTerminalSender.send(project, message);
+            try {
+                ClaudeTerminalSender.send(project, message);
+            } catch (LinkageError missing) {
+                // The Terminal plugin is optional for loading; without it the terminal classes are absent.
+                Notices.show(project, "Ask Claude needs the Terminal plugin. Enable it in Settings > Plugins "
+                        + "(" + missing + ").", NotificationType.ERROR);
+            }
         });
     }
 
