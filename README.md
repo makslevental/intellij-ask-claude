@@ -9,6 +9,13 @@ submitted; the editor keeps focus.
 
 
 
+## Install
+
+Download [`ask-claude.zip`](https://github.com/makslevental/intellij-ask-claude/releases/download/latest/ask-claude.zip)
+from the [latest release](https://github.com/makslevental/intellij-ask-claude/releases/tag/latest) (rebuilt on every
+push to `main`). Then in the IDE: Settings → Plugins → ⚙ → **Install Plugin from Disk...** → `ask-claude.zip`, and
+restart.
+
 ## Requirements
 
 * CLion (or another IDE) of build 262 or later, with its bundled **Terminal** plugin enabled.
@@ -56,11 +63,6 @@ A tab whose process could not be read, and which was picked only because its tit
 external terminal is never a target.
 
 ## Build and install
-
-Every push to `main` is built by GitHub Actions and published as the
-[latest release](https://github.com/makslevental/intellij-ask-claude/releases/tag/latest):
-download [`ask-claude.zip`](https://github.com/makslevental/intellij-ask-claude/releases/download/latest/ask-claude.zip)
-and install it as below. To build it yourself:
 
 ```sh
 scripts/test.sh          # plain-Java tests for the pure classes (needs a JDK 21+)
