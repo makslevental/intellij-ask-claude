@@ -22,17 +22,29 @@ public final class SelectionPointer {
     }
 
     /**
-     * A reference with columns in GitHub's line-and-column fragment form: {@code @src/Foo.kt#L11C3-L11C6}.
-     * Lines and columns are 1-based; the end is the position just after the last selected character.
-     * Claude Code's documented {@code @file#L} mention takes whole lines only ({@code #L10}, {@code #L10-20}), so how
-     * it treats this form is untested.
+     * The exact span of a partial-line selection as plain text: {@code (selected 11:3 to 11:6)}. It goes after the
+     * {@code @file#L} mention, never inside it: the engine reads only the lines a mention names, and ignores (and
+     * answers with the whole file for) a fragment it does not recognise, such as a column form. Lines and columns are
+     * 1-based; the end is the position just after the last selected character.
      */
-    public static String buildWithColumns(String path, int startLine, int startColumn, int endLine, int endColumn) {
-        if (path == null || path.isBlank()) throw new IllegalArgumentException("path is empty");
+    public static String span(int startLine, int startColumn, int endLine, int endColumn) {
         if (startLine < 1 || startColumn < 1 || endLine < 1 || endColumn < 1) {
             throw new IllegalArgumentException("lines and columns are 1-based");
         }
-        return "@" + path.replace('\\', '/') + "#L" + startLine + "C" + startColumn + "-L" + endLine + "C" + endColumn;
+        return "(selected " + startLine + ":" + startColumn + " to " + endLine + ":" + endColumn + ")";
+    }
+
+    /**
+     * Whether the selection covers only part of its lines, so that the line reference alone would include text the
+     * user did not select. Whitespace does not count: selecting a line from its first word to its last word is still
+     * a whole-line selection.
+     *
+     * @param beforeOnFirstLine the text on the first line before the selection starts
+     * @param afterOnLastLine   the text on the last line after the selection ends (empty when the selection ends at
+     *                          the start of a following line)
+     */
+    public static boolean isPartial(String beforeOnFirstLine, String afterOnLastLine) {
+        return !beforeOnFirstLine.isBlank() || !afterOnLastLine.isBlank();
     }
 
     /**

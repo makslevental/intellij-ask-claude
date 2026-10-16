@@ -10,6 +10,7 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.SelectionModel;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 
@@ -78,11 +79,18 @@ public final class AskClaudeAction extends AnAction implements DumbAware {
         int startLine0 = document.getLineNumber(start);
         int endLine0 = document.getLineNumber(end);
         int endColumn = end - document.getLineStartOffset(endLine0);
+        int lastLine = SelectionPointer.lastLine(startLine0, endLine0, endColumn, hasSelection);
         String path = SelectionPointer.displayPath(file.getPath(), project.getBasePath());
-        if (hasSelection) {
-            int startColumn = start - document.getLineStartOffset(startLine0);
-            return SelectionPointer.buildWithColumns(path, startLine0 + 1, startColumn + 1, endLine0 + 1, endColumn + 1);
-        }
-        return SelectionPointer.build(path, startLine0 + 1, startLine0 + 1);
+        String pointer = SelectionPointer.build(path, startLine0 + 1, lastLine);
+        if (!hasSelection) return pointer;
+
+        // Part of a line selected: the mention can only name whole lines, so add the exact span as plain text.
+        int startColumn = start - document.getLineStartOffset(startLine0);
+        String before = document.getText(new TextRange(document.getLineStartOffset(startLine0), start));
+        // A selection that ends at column 0 of a later line stops at the end of the line before it.
+        boolean endsAtLineStart = endColumn == 0 && endLine0 > startLine0;
+        String after = endsAtLineStart ? "" : document.getText(new TextRange(end, document.getLineEndOffset(endLine0)));
+        if (!SelectionPointer.isPartial(before, after)) return pointer;
+        return pointer + " " + SelectionPointer.span(startLine0 + 1, startColumn + 1, endLine0 + 1, endColumn + 1);
     }
 }

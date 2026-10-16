@@ -33,8 +33,8 @@ and has not yet been run end to end. See "If it does not work".
 2. Select code in an editor (or just put the caret on a line) and press **Ctrl+Alt+Shift+K**, or right-click and
    choose **Ask Claude...**.
 3. Optionally tick **Send text** (off by default; your choice is remembered), then type the question. The
-   reference names the lines (and, for a selection, the columns: see below), and Claude Code reads the file from
-   disk, so the text is only needed for unsaved edits. **Enter** sends, **Shift+Enter** or **Option+Enter**
+   reference names the lines, and Claude Code reads only those lines from disk. For a selection of part of a line the
+   exact columns are added after it (see "How it works"). So the text is only needed for unsaved edits. **Enter** sends, **Shift+Enter** or **Option+Enter**
    (Alt+Enter outside macOS) adds a new line, **Esc** cancels. A multi-line question is sent as one message.
 
 The popup takes keyboard focus while you type, and gives it back to the editor when it closes. The Terminal tool
@@ -57,12 +57,14 @@ external terminal is never a target.
 
 ## How it works
 
-* `SelectionPointer` builds the reference. With a selection it is `@path#L11C3-L11C6` (GitHub's line-and-column
-  form; lines and columns are 1-based and the end is the position just after the last selected character, so a
-  whole-line selection ends at column 1 of the next line). With only a caret it is `@path#L12`. The path is
-  relative to the project, absolute outside it. **Experimental:** Claude Code's documented `@file#L` mention takes
-  whole lines only (`#L10`, `#L10-20`), so how it treats the column form is untested. If the file stops being
-  attached, tick **Send text** to include the code, or switch `AskClaudeAction` back to `SelectionPointer.build`.
+* `SelectionPointer` builds the reference. It is always a valid line mention: `@path#L10-14` for a range,
+  `@path#L12` for a single line or a bare caret (a selection ending at column 0 does not include that last line).
+  When the selection covers only **part** of a line (code before where it starts or after where it ends;
+  whitespace doesn't count), the exact span follows as plain text:
+  `@path#L11 (selected 11:3 to 11:6) why is this null?`. Lines and columns are 1-based and the end is the position
+  just after the last selected character. The span is deliberately *not* part of the mention: I tested Claude Code
+  with a column form (`#L10C3-L10C9`) and it did not recognise it and attached the **whole file** (130 lines),
+  while `#L10-12` attached only those three lines. The path is relative to the project, absolute outside it.
 * `PromptEncoder` builds the message: the pointer and question on the first line, then, when **Send text** is ticked, the selected code in a
   fenced block (a longer fence if the code contains backticks; selections over 20,000 characters are cut with a
   note, since the pointer lets Claude read the rest). With nothing selected only the line pointer is sent.
