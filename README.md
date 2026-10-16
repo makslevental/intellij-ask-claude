@@ -20,7 +20,8 @@ and has not yet been run end to end. See "If it does not work".
 1. Start `claude` in the IDE's Terminal tool window (any tab; the plugin finds it).
 2. Select code in an editor (or just put the caret on a line) and press **Ctrl+Alt+Shift+K**, or right-click and
    choose **Ask Claude...**.
-3. Type the question. **Enter** sends, **Shift+Enter** adds a new line, **Esc** cancels.
+3. Type the question. **Enter** sends, **Shift+Enter** or **Option+Enter** (Alt+Enter outside macOS) adds a new line,
+   **Esc** cancels. A multi-line question is sent as one message.
 
 The popup takes keyboard focus while you type, and gives it back to the editor when it closes. The Terminal tool
 window is never activated.

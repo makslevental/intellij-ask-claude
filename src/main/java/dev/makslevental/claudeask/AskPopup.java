@@ -21,7 +21,8 @@ import java.util.List;
 import java.util.function.BiConsumer;
 
 /**
- * The small prompt box shown next to the selection. Enter sends, Shift+Enter inserts a newline, Escape closes.
+ * The small prompt box shown next to the selection. Enter sends, Shift+Enter or Option/Alt+Enter inserts a newline,
+ * Escape closes.
  * When several Claude Code terminals are running, a "Send to" list names each one (Alt+Up/Down changes it).
  * The popup takes keyboard focus while it is open (it has to, to be typed into) and hands it back to the editor
  * when it closes.
@@ -34,7 +35,7 @@ public final class AskPopup {
         JBTextArea input = new JBTextArea(3, 56);
         input.setLineWrap(true);
         input.setWrapStyleWord(true);
-        input.getEmptyText().setText("Ask Claude about this code (Enter to send, Shift+Enter for a new line)");
+        input.getEmptyText().setText("Ask Claude about this code (Enter sends; Shift+Enter or Option+Enter adds a line)");
 
         JPanel top = new JPanel(new GridLayout(0, 1, 0, JBUI.scale(4)));
         top.add(new JBLabel(pointer));
@@ -68,6 +69,8 @@ public final class AskPopup {
 
         input.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "send");
         input.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.SHIFT_DOWN_MASK), "newline");
+        // Option+Enter on a Mac (Alt+Enter elsewhere).
+        input.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.ALT_DOWN_MASK), "newline");
         input.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_UP, InputEvent.ALT_DOWN_MASK), "previousSession");
         input.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, InputEvent.ALT_DOWN_MASK), "nextSession");
         input.getActionMap().put("send", new AbstractAction() {

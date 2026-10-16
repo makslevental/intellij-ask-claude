@@ -80,6 +80,10 @@ public final class Tests {
         eq("label for a guessed tab", "t (guessed from the title)", TargetChoice.label("t", "", "/Users/me", false));
         eq("blank title falls back", "Terminal", TargetChoice.label(" ", null, null, true));
 
+
+        eq("a multi-line question keeps its line breaks", "@a.c#L1 first\nsecond\n  third", PromptEncoder.message("@a.c#L1", "first\nsecond\n  third\n"));
+        eq("a multi-line paste keeps its line breaks", "\u001b[200~a\nb\u001b[201~", PromptEncoder.paste("a\nb", true));
+
         System.out.println(failures == 0 ? "\nall passed" : "\n" + failures + " FAILED");
         System.exit(failures == 0 ? 0 : 1);
     }
